@@ -20,4 +20,12 @@ export class Tarea {
   toString() {
     return `[${this.estado.toUpperCase()}] ${this.descripcion} (creada: ${this.fechaCreacion.toLocaleString()})`;
   }
+  
+  // Arrow function como propiedad de clase: mantiene "this" ligado a la
+  // instancia automáticamente, lo que será clave más adelante al usarla
+  // como manejador de eventos (this no se pierde al pasarla como callback).
+  obtenerResumen = () => {
+    const { descripcion, estado } = this; // Destructuring de las propiedades del propio objeto
+    return `${descripcion} - ${estado}`;
+  };
 }
