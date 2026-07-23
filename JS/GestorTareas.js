@@ -11,9 +11,10 @@ export class GestorTareas {
     this.tareas = [];
   }
 
-  // Crea una nueva Tarea y la agrega a la lista
-  agregarTarea(descripcion) {
-    const nuevaTarea = new Tarea(descripcion);
+  // Crea una nueva Tarea y la agrega a la lista.
+  // minutosLimite es opcional: si no se indica, la tarea no tiene fecha límite.
+  agregarTarea(descripcion, minutosLimite) {
+    const nuevaTarea = new Tarea(descripcion, minutosLimite);
     this.tareas.push(nuevaTarea);
     return nuevaTarea;
   }
@@ -46,14 +47,15 @@ export class GestorTareas {
     return [...this.tareas];
   }
 
-  // Destructuring + spread: separa las tareas en dos grupos usando
-  // los operadores modernos de arreglos.
+  // Cuenta cuántas tareas hay en total, pendientes y completadas.
   obtenerResumenPorEstado() {
-    const pendientes = this.tareas.filter(({ estado }) => estado === "pendiente");
-    const completadas = this.tareas.filter(({ estado }) => estado === "completada");
+    const pendientes = this.tareas.filter((t) => t.estado === "pendiente");
+    const completadas = this.tareas.filter((t) => t.estado === "completada");
 
     return {
       total: this.tareas.length,
       pendientes: pendientes.length,
       completadas: completadas.length,
     };
+  }
+}

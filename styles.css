@@ -1,0 +1,134 @@
+* {
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f4f4f9;
+  color: #222;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+header p {
+  color: #666;
+  margin-top: -8px;
+}
+
+/* --- Formulario --- */
+#form-tarea {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+#input-descripcion {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+#input-minutos {
+  width: 150px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+#notificacion {
+  min-height: 20px;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+#btn-agregar {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #6c5ce7;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+/* El botón se ve "apagado" cuando está deshabilitado (input vacío) */
+#btn-agregar:disabled {
+  background-color: #b8b3e0;
+  cursor: not-allowed;
+}
+
+/* --- Resumen --- */
+#resumen-tareas {
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #444;
+  background: #eceaf9;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+/* --- Lista de tareas --- */
+#lista-tareas {
+  list-style: none;
+  padding: 0;
+}
+
+#lista-tareas li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+}
+
+/* Clase que se agrega/quita dinámicamente con mouseover/mouseout */
+#lista-tareas li.resaltada {
+  background-color: #f0edfc;
+  border-color: #b8b3e0;
+}
+
+.tarea-texto {
+  flex: 1;
+  cursor: pointer;
+}
+
+.tarea-completada .tarea-texto {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.contador {
+  font-size: 13px;
+  color: #666;
+  margin-left: 8px;
+}
+
+.acciones {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-eliminar {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
