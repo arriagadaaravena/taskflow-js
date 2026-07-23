@@ -12,28 +12,23 @@ const formTarea = document.getElementById("form-tarea");
 const inputDescripcion = document.getElementById("input-descripcion");
 const inputMinutos = document.getElementById("input-minutos");
 const btnAgregar = document.getElementById("btn-agregar");
+const btnCargarApi = document.getElementById("btn-cargar-api");
 const listaTareas = document.getElementById("lista-tareas");
 const resumenTareas = document.getElementById("resumen-tareas");
 const notificacionDiv = document.getElementById("notificacion");
 
-// Guardamos aquí los ids de los setInterval activos (uno por cada
-// tarea con contador regresivo), para poder detenerlos antes de
-// volver a dibujar la lista y evitar que se acumulen sin control.
 let intervalosActivos = [];
 
 
 /* ---------- PASO 3: Eventos y manipulación del DOM ---------- */
 
-// Dibuja (renderiza) la lista completa de tareas en el DOM.
 function renderizarTareas() {
-  // Antes de volver a dibujar, detenemos todos los contadores regresivos
-  // que estaban corriendo, porque sus elementos HTML van a desaparecer.
   for (let i = 0; i < intervalosActivos.length; i++) {
     clearInterval(intervalosActivos[i]);
   }
   intervalosActivos = [];
 
-  listaTareas.innerHTML = ""; // Limpiamos la lista antes de volver a dibujarla
+  listaTareas.innerHTML = "";
 
   gestor.obtenerTareas().forEach((tarea) => {
     const li = document.createElement("li");
@@ -70,7 +65,6 @@ function renderizarTareas() {
     li.appendChild(spanTexto);
     li.appendChild(btnEliminar);
 
-    // Si la tarea tiene fecha límite, le agregamos un contador regresivo
     if (tarea.fechaLimite) {
       const spanContador = document.createElement("span");
       spanContador.className = "contador";
@@ -83,9 +77,11 @@ function renderizarTareas() {
   });
 
   renderizarResumen();
+
+  // Paso 5: cada vez que la lista cambia, guardamos el estado actual en localStorage
+  gestor.guardarEnLocalStorage();
 }
 
-// Actualiza el contador de Total / Pendientes / Completadas
 function renderizarResumen() {
   const { total, pendientes, completadas } = gestor.obtenerResumenPorEstado();
   resumenTareas.textContent = `Total: ${total} | Pendientes: ${pendientes} | Completadas: ${completadas}`;
@@ -94,36 +90,32 @@ function renderizarResumen() {
 
 /* ---------- PASO 4: JavaScript Asíncrono ---------- */
 
-// 1) Simula un retardo al agregar una tarea usando setTimeout.
-// En vez de agregar la tarea de inmediato, esperamos 1 segundo,
-// como si la aplicación estuviera "guardando" la tarea en un servidor.
 function agregarTareaConRetardo(descripcion, minutos) {
   btnAgregar.disabled = true;
   resumenTareas.textContent = "Agregando tarea, espera un momento...";
 
   setTimeout(() => {
-    gestor.agregarTarea(descripcion, minutos);
+    const nuevaTarea = gestor.agregarTarea(descripcion, minutos);
     renderizarTareas();
     mostrarNotificacionConRetardo(`Tarea agregada: ${descripcion}`);
-  }, 1000); // 1000 milisegundos = 1 segundo de retardo simulado
+
+    // Paso 5: además de guardar localmente, intentamos guardar en la API
+    guardarTareaEnAPI(nuevaTarea);
+  }, 1000);
 }
 
-// 2) Muestra una notificación, pero recién 2 segundos después de ser llamada.
 function mostrarNotificacionConRetardo(mensaje) {
   setTimeout(() => {
     notificacionDiv.textContent = "✅ " + mensaje;
 
-    // Hacemos que la notificación desaparezca sola después de un rato
     setTimeout(() => {
       notificacionDiv.textContent = "";
     }, 3000);
-  }, 2000); // 2000 milisegundos = 2 segundos, tal como pide la pauta
+  }, 2000);
 }
 
-// 3) Crea un contador regresivo para una tarea con fecha límite.
-// Se actualiza cada 1 segundo usando setInterval.
 function iniciarContadorRegresivo(tarea, spanContador) {
-  actualizarTextoContador(tarea, spanContador); // Mostramos el valor inicial de inmediato
+  actualizarTextoContador(tarea, spanContador);
 
   const idIntervalo = setInterval(() => {
     actualizarTextoContador(tarea, spanContador);
@@ -132,7 +124,6 @@ function iniciarContadorRegresivo(tarea, spanContador) {
   intervalosActivos.push(idIntervalo);
 }
 
-// Calcula el tiempo restante y lo escribe en el contador.
 function actualizarTextoContador(tarea, spanContador) {
   const segundosRestantes = tarea.calcularSegundosRestantes();
 
@@ -143,11 +134,66 @@ function actualizarTextoContador(tarea, spanContador) {
 
   const minutos = Math.floor(segundosRestantes / 60);
   const segundos = segundosRestantes % 60;
-
-  // Agregamos un "0" delante si el número de segundos es menor a 10 (ej: 05 en vez de 5)
   const segundosTexto = segundos < 10 ? "0" + segundos : segundos;
 
   spanContador.textContent = ` ⏳ Tiempo restante: ${minutos}:${segundosTexto}`;
+}
+
+
+/* ---------- PASO 5: Consumo de APIs ---------- */
+
+// Función que TRAE tareas de ejemplo desde una API externa usando fetch().
+// Usamos async/await junto con try/catch para poder manejar errores
+// (por ejemplo, si no hay conexión a internet).
+async function cargarTareasDesdeAPI() {
+  resumenTareas.textContent = "Cargando tareas desde la API...";
+
+  try {
+    const respuesta = await fetch("https://jsonplaceholder.typicode.com/todos?_limit=5");
+
+    if (!respuesta.ok) {
+      throw new Error("La API respondió con un error: " + respuesta.status);
+    }
+
+    const datosApi = await respuesta.json();
+
+    datosApi.forEach((tareaDeLaApi) => {
+      gestor.agregarTarea(tareaDeLaApi.title);
+    });
+
+    renderizarTareas();
+    mostrarNotificacionConRetardo("Tareas cargadas desde la API");
+  } catch (error) {
+    console.log("Ocurrió un error al cargar tareas desde la API:", error);
+    resumenTareas.textContent = "❌ No se pudieron cargar las tareas desde la API.";
+  }
+}
+
+// Función que GUARDA una tarea en una API externa usando fetch() con método POST.
+// JSONPlaceholder es una API de práctica: no guarda datos realmente,
+// pero nos permite practicar cómo se hace una petición POST y manejar su respuesta.
+async function guardarTareaEnAPI(tarea) {
+  try {
+    const respuesta = await fetch("https://jsonplaceholder.typicode.com/todos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: tarea.descripcion,
+        completed: tarea.estado === "completada",
+      }),
+    });
+
+    if (!respuesta.ok) {
+      throw new Error("Error al guardar la tarea en la API: " + respuesta.status);
+    }
+
+    const datosRespuesta = await respuesta.json();
+    console.log("Tarea guardada en la API (respuesta simulada):", datosRespuesta);
+  } catch (error) {
+    console.log("Ocurrió un error al guardar la tarea en la API:", error);
+  }
 }
 
 
@@ -174,10 +220,19 @@ inputDescripcion.addEventListener("keyup", () => {
   btnAgregar.disabled = inputDescripcion.value.trim() === "";
 });
 
+btnCargarApi.addEventListener("click", cargarTareasDesdeAPI);
 
-/* ---------- Datos de ejemplo iniciales ---------- */
-gestor.agregarTarea("Estudiar POO en JavaScript");
-gestor.agregarTarea("Conectar eventos del DOM");
-gestor.agregarTarea("Practicar consumo de APIs", 2); // Con 2 minutos de fecha límite, de ejemplo
+
+/* ---------- Carga inicial de la aplicación ---------- */
+
+// Primero intentamos recuperar tareas guardadas en localStorage.
+// Si no hay nada guardado (primera vez que se abre la app), usamos tareas de ejemplo.
+const seEncontraronTareasGuardadas = gestor.cargarDesdeLocalStorage();
+
+if (!seEncontraronTareasGuardadas) {
+  gestor.agregarTarea("Estudiar POO en JavaScript");
+  gestor.agregarTarea("Conectar eventos del DOM");
+  gestor.agregarTarea("Practicar consumo de APIs", 2);
+}
 
 renderizarTareas();

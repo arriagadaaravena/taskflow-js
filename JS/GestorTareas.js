@@ -58,4 +58,40 @@ export class GestorTareas {
       completadas: completadas.length,
     };
   }
+
+  // Guarda todas las tareas en el localStorage del navegador,
+  // convirtiéndolas a texto con JSON.stringify.
+  guardarEnLocalStorage() {
+    const tareasComoTexto = JSON.stringify(this.tareas);
+    localStorage.setItem("tareasTaskFlow", tareasComoTexto);
+  }
+
+  // Recupera las tareas guardadas en localStorage (si existen).
+  // Devuelve true si encontró y cargó tareas, false si no había nada guardado.
+  cargarDesdeLocalStorage() {
+    const datosGuardados = localStorage.getItem("tareasTaskFlow");
+
+    if (!datosGuardados) {
+      return false;
+    }
+
+    const tareasGuardadas = JSON.parse(datosGuardados);
+
+    this.tareas = tareasGuardadas.map((tareaGuardada) => {
+      const tarea = new Tarea(tareaGuardada.descripcion);
+      tarea.id = tareaGuardada.id;
+      tarea.estado = tareaGuardada.estado;
+      tarea.fechaCreacion = new Date(tareaGuardada.fechaCreacion);
+
+      if (tareaGuardada.fechaLimite) {
+        tarea.fechaLimite = new Date(tareaGuardada.fechaLimite);
+      } else {
+        tarea.fechaLimite = null;
+      }
+
+      return tarea;
+    });
+
+    return true;
+  }
 }
